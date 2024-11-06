@@ -1,7 +1,6 @@
 const knex = require("../database/knex/index")
 const AppError = require('../utils/AppError')
-const { hash } = require("bcryptjs")
-const sqliteConnection = require('../database/sqlite')
+const { hash, compare } = require('bcryptjs')
 
 class UsersController {
   async create(request, response) {
@@ -18,6 +17,9 @@ class UsersController {
     }
 
     
+    password = await hash(password, 8)
+
+
     await knex("users").insert({
       name,
       email,
@@ -43,8 +45,9 @@ class UsersController {
         throw new AppError("forneça a senha antiga")
     }
 
-       
-    if(oldPassword !== user.password){
+    const checkOldPassword = await compare(oldPassword, user.password)   
+
+    if(!checkOldPassword){
         throw new AppError("senha antiga está incorreta")
     }
 
@@ -54,6 +57,7 @@ class UsersController {
     throw new AppError("Este e-mail já está em uso.")
    }
 
+  password = await hash(password, 8)
 
   await knex("users").where({id}).update({
     name: name,
